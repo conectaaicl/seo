@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  seo_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: seo_api
+    restart: unless-stopped
+    ports:
+      - "8009:8000"
+    env_file:
+      - ./backend/.env
+    networks:
+      - seo_net
+
+networks:
+  seo_net:
+    driver: bridge
