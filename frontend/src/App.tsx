@@ -13,6 +13,7 @@ import SearchConsolePage from './pages/SearchConsolePage'
 import RankTrackingPage from './pages/RankTrackingPage'
 import CrawlerPage from './pages/CrawlerPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import AlertsPage from './pages/AlertsPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import TenantsPage from './pages/admin/TenantsPage'
 import UsersPage from './pages/admin/UsersPage'
@@ -39,6 +40,7 @@ const SEO_TABS = [
   { id: 'crawler', label: 'Site Crawler', icon: '🕷️', desc: 'Crawlea el sitio y detecta issues SEO' },
   { id: 'analytics', label: 'Google Analytics 4', icon: '📊', desc: 'Sesiones, usuarios y tráfico GA4' },
   { id: 'my-settings', label: 'Mis API Keys', icon: '🔑', desc: 'Configura tus claves propias' },
+  { id: 'alerts', label: 'Alertas SEO', icon: '🔔', desc: 'Notificaciones de caída de score' },
 ]
 
 const ADMIN_TABS = [
@@ -208,6 +210,7 @@ export default function App() {
               {tab === 'crawler' && <CrawlerPage />}
               {tab === 'analytics' && <AnalyticsPage />}
               {tab === 'my-settings' && <MySettingsPage />}
+              {tab === 'alerts' && <AlertsPage />}
             </>
           )}
           {/* Admin Panel */}

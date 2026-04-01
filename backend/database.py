@@ -77,6 +77,21 @@ class CrawlJob(Base):
     results_json = Column(Text, default="[]")    # JSON array of page results
 
 
+class AlertConfig(Base):
+    __tablename__ = "alert_configs"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    site_url = Column(String, nullable=False)
+    alert_email = Column(String, nullable=False)
+    seo_score_threshold = Column(String, default="70")   # alert if score drops below this
+    pagespeed_threshold = Column(String, default="50")   # alert if performance drops below this
+    is_active = Column(Boolean, default=True)
+    last_checked = Column(DateTime, nullable=True)
+    last_seo_score = Column(String, default="")
+    last_pagespeed_score = Column(String, default="")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
 def get_db():
     db = SessionLocal()
     try:
