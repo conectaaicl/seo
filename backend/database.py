@@ -2,6 +2,8 @@ from sqlalchemy import create_engine, Column, String, Boolean, DateTime, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 import datetime, uuid, os
 
+
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////app/data/seo_app.db")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -19,6 +21,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
     google_refresh_token = Column(String, default="")
+    ga4_refresh_token = Column(String, default="")
 
 
 class Tenant(Base):
@@ -61,6 +64,17 @@ class Setting(Base):
     key = Column(String, primary_key=True)
     value = Column(Text, default="")
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class CrawlJob(Base):
+    __tablename__ = "crawl_jobs"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    site_url = Column(String, nullable=False)
+    status = Column(String, default="running")   # running | done | error
+    pages_crawled = Column(String, default="0")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    results_json = Column(Text, default="[]")    # JSON array of page results
 
 
 def get_db():

@@ -8,12 +8,14 @@ import httpx, re, os, json, hashlib, time, contextvars
 
 from bs4 import BeautifulSoup
 from sqlalchemy import text
-from database import Base, engine, SessionLocal, Setting, User, Tenant
+from database import Base, engine, SessionLocal, Setting, User, Tenant, CrawlJob
 from auth_helpers import hash_password, decode_token
 from auth_router import router as auth_router
 from admin_router import router as admin_router
 from google_router import router as google_router
 from rank_router import router as rank_router
+from crawler_router import router as crawler_router
+from analytics_router import router as analytics_router
 
 # Per-request effective API keys (set by auth middleware based on tenant config)
 _ctx_groq_key: contextvars.ContextVar[str] = contextvars.ContextVar('groq_key', default='')
@@ -75,6 +77,7 @@ async def startup():
             "ALTER TABLE tenants ADD COLUMN pagespeed_api_key TEXT DEFAULT ''",
             "ALTER TABLE tenants ADD COLUMN google_refresh_token TEXT DEFAULT ''",
             "ALTER TABLE users ADD COLUMN google_refresh_token TEXT DEFAULT ''",
+            "ALTER TABLE users ADD COLUMN ga4_refresh_token TEXT DEFAULT ''",
         ]:
             try:
                 db.execute(text(stmt)); db.commit()
@@ -101,6 +104,8 @@ app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(google_router)
 app.include_router(rank_router)
+app.include_router(crawler_router)
+app.include_router(analytics_router)
 
 GROQ_MODEL = "llama-3.1-8b-instant"
 

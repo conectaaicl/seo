@@ -11,6 +11,8 @@ import PageSpeedPage from './pages/PageSpeedPage'
 import MySettingsPage from './pages/MySettingsPage'
 import SearchConsolePage from './pages/SearchConsolePage'
 import RankTrackingPage from './pages/RankTrackingPage'
+import CrawlerPage from './pages/CrawlerPage'
+import AnalyticsPage from './pages/AnalyticsPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import TenantsPage from './pages/admin/TenantsPage'
 import UsersPage from './pages/admin/UsersPage'
@@ -34,6 +36,8 @@ const SEO_TABS = [
   { id: 'report', label: 'Informe PDF', icon: '📊', desc: 'Reporte profesional cliente' },
   { id: 'gsc', label: 'Search Console', icon: '📊', desc: 'Keywords y posiciones reales' },
   { id: 'rank', label: 'Rank Tracking', icon: '📈', desc: 'Monitoreo de posiciones diario' },
+  { id: 'crawler', label: 'Site Crawler', icon: '🕷️', desc: 'Crawlea el sitio y detecta issues SEO' },
+  { id: 'analytics', label: 'Google Analytics 4', icon: '📊', desc: 'Sesiones, usuarios y tráfico GA4' },
   { id: 'my-settings', label: 'Mis API Keys', icon: '🔑', desc: 'Configura tus claves propias' },
 ]
 
@@ -201,6 +205,8 @@ export default function App() {
               {tab === 'report' && <ReportPage />}
               {tab === 'gsc' && <SearchConsolePage />}
               {tab === 'rank' && <RankTrackingPage />}
+              {tab === 'crawler' && <CrawlerPage />}
+              {tab === 'analytics' && <AnalyticsPage />}
               {tab === 'my-settings' && <MySettingsPage />}
             </>
           )}
