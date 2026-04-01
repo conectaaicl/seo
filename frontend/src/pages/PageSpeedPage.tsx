@@ -78,25 +78,38 @@ export default function PageSpeedPage() {
             <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', marginBottom: 14 }}>
               Core Web Vitals
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 12, marginBottom: 16 }}>
               {[
-                { label: 'FCP — First Contentful Paint', key: 'fcp' },
-                { label: 'LCP — Largest Contentful Paint', key: 'lcp' },
-                { label: 'TBT — Total Blocking Time', key: 'tbt' },
-                { label: 'CLS — Cumulative Layout Shift', key: 'cls' },
-                { label: 'Speed Index', key: 'si' },
-                { label: 'TTI — Time to Interactive', key: 'tti' },
-              ].map(({ label, key }) => {
+                { label: 'FCP', key: 'fcp', desc: 'First Contentful Paint — tiempo hasta que aparece el primer contenido visible', good: '< 1.8s', bad: '> 3s' },
+                { label: 'LCP', key: 'lcp', desc: 'Largest Contentful Paint — tiempo hasta que carga el elemento más grande', good: '< 2.5s', bad: '> 4s' },
+                { label: 'TBT', key: 'tbt', desc: 'Total Blocking Time — tiempo que el browser está bloqueado y no responde', good: '< 200ms', bad: '> 600ms' },
+                { label: 'CLS', key: 'cls', desc: 'Cumulative Layout Shift — cuánto se mueven los elementos mientras carga', good: '< 0.1', bad: '> 0.25' },
+                { label: 'Speed Index', key: 'si', desc: 'Qué tan rápido se muestra visualmente el contenido de la página', good: '< 3.4s', bad: '> 5.8s' },
+                { label: 'TTI', key: 'tti', desc: 'Time to Interactive — tiempo hasta que la página responde a clicks', good: '< 3.8s', bad: '> 7.3s' },
+              ].map(({ label, key, desc, good, bad }) => {
                 const m = result.metrics?.[key]
+                const color = m?.score === null || m?.score === undefined ? C.muted : m.score >= 0.9 ? '#22c55e' : m.score >= 0.5 ? '#f59e0b' : '#ef4444'
                 return (
-                  <MetricCard
-                    key={key}
-                    label={label}
-                    value={m?.displayValue || '—'}
-                    score={m?.score ?? null}
-                  />
+                  <Card key={key} style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>{label}</div>
+                      <div style={{ fontSize: 18, fontWeight: 800, color }}>{m?.displayValue || '—'}</div>
+                    </div>
+                    <div style={{ fontSize: 11, color: C.muted, lineHeight: 1.4, marginBottom: 8 }}>{desc}</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 10, background: '#10b98118', color: '#10b981' }}>✓ {good}</span>
+                      <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 10, background: '#ef444418', color: '#ef4444' }}>✗ {bad}</span>
+                    </div>
+                  </Card>
                 )
               })}
+            </div>
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: 16, padding: '10px 14px', background: '#ffffff06', borderRadius: 8 }}>
+              <span style={{ fontSize: 11, color: '#22c55e', fontWeight: 600 }}>● Bueno</span>
+              <span style={{ fontSize: 11, color: '#f59e0b', fontWeight: 600 }}>● Mejorable</span>
+              <span style={{ fontSize: 11, color: '#ef4444', fontWeight: 600 }}>● Crítico</span>
+              <span style={{ fontSize: 11, color: C.muted, marginLeft: 'auto' }}>Fuente: Google PageSpeed Insights API</span>
             </div>
           </Card>
 

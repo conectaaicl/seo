@@ -38,10 +38,23 @@ export default function MySettingsPage() {
   if (loading) return <div style={{ textAlign: 'center', padding: '60px 0', color: C.muted }}>Cargando...</div>
 
   if (!data?.has_tenant) return (
-    <Card>
-      <div style={{ textAlign: 'center', padding: '40px 0' }}>
-        <div style={{ fontSize: 36, marginBottom: 12 }}>🔑</div>
-        <div style={{ fontSize: 14, color: C.muted }}>Tu cuenta no tiene un perfil de tenant asociado. Contacta al administrador.</div>
+    <Card style={{ background: 'rgba(99,102,241,0.06)', borderColor: 'rgba(99,102,241,0.2)' }}>
+      <div style={{ textAlign: 'center', padding: '32px 0' }}>
+        <div style={{ fontSize: 36, marginBottom: 12 }}>⚙️</div>
+        <div style={{ fontSize: 15, fontWeight: 700, color: '#fff', marginBottom: 8 }}>Cuenta de Administrador</div>
+        <div style={{ fontSize: 13, color: C.muted, marginBottom: 20, lineHeight: 1.6 }}>
+          Las API Keys globales del sistema se configuran en<br />
+          <strong style={{ color: '#818cf8' }}>Panel Admin → ⚙️ Configuración</strong>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 320, margin: '0 auto', textAlign: 'left' }}>
+          {[
+            '🤖 Groq API Key — motor de IA para generación de contenido',
+            '⚡ PageSpeed API Key — velocidad y Core Web Vitals',
+            '📧 SMTP — configuración de email para invitaciones',
+          ].map((t, i) => (
+            <div key={i} style={{ fontSize: 13, color: C.text, padding: '8px 12px', background: '#ffffff06', borderRadius: 8 }}>{t}</div>
+          ))}
+        </div>
       </div>
     </Card>
   )

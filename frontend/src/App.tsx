@@ -10,6 +10,7 @@ import ReportPage from './pages/ReportPage'
 import PageSpeedPage from './pages/PageSpeedPage'
 import MySettingsPage from './pages/MySettingsPage'
 import SearchConsolePage from './pages/SearchConsolePage'
+import RankTrackingPage from './pages/RankTrackingPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import TenantsPage from './pages/admin/TenantsPage'
 import UsersPage from './pages/admin/UsersPage'
@@ -32,6 +33,7 @@ const SEO_TABS = [
   { id: 'calendar', label: 'Calendario', icon: '📅', desc: 'Plan editorial SEO' },
   { id: 'report', label: 'Informe PDF', icon: '📊', desc: 'Reporte profesional cliente' },
   { id: 'gsc', label: 'Search Console', icon: '📊', desc: 'Keywords y posiciones reales' },
+  { id: 'rank', label: 'Rank Tracking', icon: '📈', desc: 'Monitoreo de posiciones diario' },
   { id: 'my-settings', label: 'Mis API Keys', icon: '🔑', desc: 'Configura tus claves propias' },
 ]
 
@@ -62,7 +64,10 @@ export default function App() {
   const [user, setUser] = useState<any>(() => {
     try { return JSON.parse(localStorage.getItem('seo_user') || 'null') } catch { return null }
   })
-  const [tab, setTab] = useState('audit')
+  const [tab, setTab] = useState(() => {
+    const p = new URLSearchParams(window.location.search)
+    return p.get('tab') || 'audit'
+  })
   const [mode, setMode] = useState<'app' | 'admin'>('app')
 
   // If admin, default to admin panel
@@ -195,6 +200,7 @@ export default function App() {
               {tab === 'calendar' && <CalendarPage />}
               {tab === 'report' && <ReportPage />}
               {tab === 'gsc' && <SearchConsolePage />}
+              {tab === 'rank' && <RankTrackingPage />}
               {tab === 'my-settings' && <MySettingsPage />}
             </>
           )}

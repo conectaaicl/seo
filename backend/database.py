@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, Column, String, Boolean, DateTime, Text
 from sqlalchemy.orm import declarative_base, sessionmaker
 import datetime, uuid, os
 
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./seo_app.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:////app/data/seo_app.db")
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
@@ -18,6 +18,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     last_login = Column(DateTime, nullable=True)
+    google_refresh_token = Column(String, default="")
 
 
 class Tenant(Base):
@@ -34,6 +35,25 @@ class Tenant(Base):
     pagespeed_api_key = Column(String, default="") # tenant's own key (overrides global)
     google_refresh_token = Column(String, default="")  # Google Search Console OAuth
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class TrackedKeyword(Base):
+    __tablename__ = "tracked_keywords"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    keyword = Column(String, nullable=False)
+    site_url = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class RankHistory(Base):
+    __tablename__ = "rank_history"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    keyword_id = Column(String, nullable=False, index=True)
+    position = Column(String, default="")   # avg position or "—"
+    clicks = Column(String, default="0")
+    impressions = Column(String, default="0")
+    checked_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 class Setting(Base):

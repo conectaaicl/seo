@@ -63,5 +63,9 @@ export async function login(email: string, password: string) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, password }),
   })
-  return handleResponse(r)
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({ detail: 'Error de conexión' }))
+    throw new Error(err.detail || 'Credenciales incorrectas')
+  }
+  return r.json()
 }

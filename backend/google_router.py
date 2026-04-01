@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
-from database import SessionLocal, Tenant
+from database import SessionLocal, Tenant, User
 from auth_helpers import decode_token
 from urllib.parse import quote
 import os, httpx, datetime
@@ -20,13 +20,31 @@ def _client_secret():
     return os.getenv("GOOGLE_CLIENT_SECRET", "")
 
 
-def _get_tenant(request: Request, db: Session) -> Tenant | None:
+def _get_user_id(request: Request) -> str:
     auth = request.headers.get("Authorization", "")
     if not auth.startswith("Bearer "):
         raise HTTPException(401)
     payload = decode_token(auth[7:])
-    user_id = payload.get("sub", "")
-    return db.query(Tenant).filter(Tenant.user_id == user_id).first()
+    return payload.get("sub", "")
+
+
+def _get_refresh_token(user_id: str, db: Session) -> str:
+    """Get refresh token from User or their Tenant."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if user and user.google_refresh_token:
+        return user.google_refresh_token
+    tenant = db.query(Tenant).filter(Tenant.user_id == user_id).first()
+    if tenant and tenant.google_refresh_token:
+        return tenant.google_refresh_token
+    return ""
+
+
+def _save_refresh_token(user_id: str, token: str, db: Session):
+    """Save refresh token to User record."""
+    user = db.query(User).filter(User.id == user_id).first()
+    if user:
+        user.google_refresh_token = token
+        db.commit()
 
 
 async def _refresh_access_token(refresh_token: str) -> str:
@@ -42,14 +60,10 @@ async def _refresh_access_token(refresh_token: str) -> str:
         return r.json()["access_token"]
 
 
-# ── GET auth URL ────────────────────────────────────────────────────────────
+# ── GET auth URL ─────────────────────────────────────────────────────────────
 @router.get("/api/gsc/auth-url")
 async def gsc_auth_url(request: Request):
-    auth = request.headers.get("Authorization", "")
-    if not auth.startswith("Bearer "):
-        raise HTTPException(401)
-    payload = decode_token(auth[7:])
-    user_id = payload.get("sub", "")
+    user_id = _get_user_id(request)
     url = (
         "https://accounts.google.com/o/oauth2/v2/auth"
         f"?client_id={_client_id()}"
@@ -63,14 +77,14 @@ async def gsc_auth_url(request: Request):
     return {"url": url}
 
 
-# ── OAuth callback (public — starts with /auth/) ────────────────────────────
+# ── OAuth callback (public — starts with /auth/) ─────────────────────────────
 @router.get("/auth/google/callback")
 async def google_callback(code: str = None, state: str = None, error: str = None):
     app_url = os.getenv("APP_URL", "https://seo.conectaai.cl")
     db = SessionLocal()
     try:
         if error or not code:
-            return RedirectResponse(f"{app_url}?gsc=error&msg={error or 'cancelled'}")
+            return RedirectResponse(f"{app_url}?gsc=error")
 
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(TOKEN_URL, data={
@@ -81,31 +95,29 @@ async def google_callback(code: str = None, state: str = None, error: str = None
                 "grant_type": "authorization_code",
             })
             if r.status_code != 200:
-                return RedirectResponse(f"{app_url}?gsc=error&msg=token_exchange_failed")
+                return RedirectResponse(f"{app_url}?gsc=error")
             tokens = r.json()
 
         refresh_token = tokens.get("refresh_token")
         if not refresh_token:
-            return RedirectResponse(f"{app_url}?gsc=error&msg=no_refresh_token")
+            return RedirectResponse(f"{app_url}?gsc=error")
 
-        tenant = db.query(Tenant).filter(Tenant.user_id == state).first()
-        if tenant:
-            tenant.google_refresh_token = refresh_token
-            db.commit()
+        _save_refresh_token(state, refresh_token, db)
 
-        return RedirectResponse(f"{app_url}?gsc=ok")
+        # Redirect to the GSC tab directly
+        return RedirectResponse(f"{app_url}?gsc=ok&tab=gsc")
     finally:
         db.close()
 
 
-# ── GSC status ───────────────────────────────────────────────────────────────
+# ── GSC status ────────────────────────────────────────────────────────────────
 @router.get("/api/gsc/status")
 async def gsc_status(request: Request):
     db = SessionLocal()
     try:
-        tenant = _get_tenant(request, db)
-        connected = bool(tenant and tenant.google_refresh_token)
-        return {"connected": connected}
+        user_id = _get_user_id(request)
+        token = _get_refresh_token(user_id, db)
+        return {"connected": bool(token)}
     finally:
         db.close()
 
@@ -115,10 +127,8 @@ async def gsc_status(request: Request):
 async def gsc_disconnect(request: Request):
     db = SessionLocal()
     try:
-        tenant = _get_tenant(request, db)
-        if tenant:
-            tenant.google_refresh_token = ""
-            db.commit()
+        user_id = _get_user_id(request)
+        _save_refresh_token(user_id, "", db)
         return {"ok": True}
     finally:
         db.close()
@@ -129,10 +139,11 @@ async def gsc_disconnect(request: Request):
 async def gsc_sites(request: Request):
     db = SessionLocal()
     try:
-        tenant = _get_tenant(request, db)
-        if not tenant or not tenant.google_refresh_token:
+        user_id = _get_user_id(request)
+        token = _get_refresh_token(user_id, db)
+        if not token:
             raise HTTPException(400, "Search Console no conectado")
-        access_token = await _refresh_access_token(tenant.google_refresh_token)
+        access_token = await _refresh_access_token(token)
         async with httpx.AsyncClient(timeout=20) as client:
             r = await client.get(
                 "https://www.googleapis.com/webmasters/v3/sites",
@@ -150,17 +161,17 @@ async def gsc_sites(request: Request):
 async def gsc_analytics(site_url: str, days: int = 28, request: Request = None):
     db = SessionLocal()
     try:
-        tenant = _get_tenant(request, db)
-        if not tenant or not tenant.google_refresh_token:
+        user_id = _get_user_id(request)
+        token = _get_refresh_token(user_id, db)
+        if not token:
             raise HTTPException(400, "Search Console no conectado")
-        access_token = await _refresh_access_token(tenant.google_refresh_token)
+        access_token = await _refresh_access_token(token)
 
         end = datetime.date.today()
         start = end - datetime.timedelta(days=days)
         encoded = quote(site_url, safe="")
 
         async with httpx.AsyncClient(timeout=30) as client:
-            # Top queries
             rq = await client.post(
                 f"https://www.googleapis.com/webmasters/v3/sites/{encoded}/searchAnalytics/query",
                 headers={"Authorization": f"Bearer {access_token}"},
@@ -171,8 +182,6 @@ async def gsc_analytics(site_url: str, days: int = 28, request: Request = None):
                 }
             )
             rq.raise_for_status()
-
-            # Top pages
             rp = await client.post(
                 f"https://www.googleapis.com/webmasters/v3/sites/{encoded}/searchAnalytics/query",
                 headers={"Authorization": f"Bearer {access_token}"},
@@ -183,8 +192,6 @@ async def gsc_analytics(site_url: str, days: int = 28, request: Request = None):
                 }
             )
             rp.raise_for_status()
-
-            # Totals (no dimension)
             rt = await client.post(
                 f"https://www.googleapis.com/webmasters/v3/sites/{encoded}/searchAnalytics/query",
                 headers={"Authorization": f"Bearer {access_token}"},
@@ -192,7 +199,7 @@ async def gsc_analytics(site_url: str, days: int = 28, request: Request = None):
             )
             rt.raise_for_status()
 
-        def fmt_rows(rows, key="query"):
+        def fmt_rows(rows):
             return [
                 {
                     "key": r["keys"][0],
@@ -217,7 +224,7 @@ async def gsc_analytics(site_url: str, days: int = 28, request: Request = None):
                 "position": round(totals.get("position", 0), 1),
             },
             "top_queries": fmt_rows(rq.json().get("rows", [])),
-            "top_pages": fmt_rows(rp.json().get("rows", []), key="page"),
+            "top_pages": fmt_rows(rp.json().get("rows", [])),
         }
     finally:
         db.close()

@@ -13,6 +13,7 @@ from auth_helpers import hash_password, decode_token
 from auth_router import router as auth_router
 from admin_router import router as admin_router
 from google_router import router as google_router
+from rank_router import router as rank_router
 
 # Per-request effective API keys (set by auth middleware based on tenant config)
 _ctx_groq_key: contextvars.ContextVar[str] = contextvars.ContextVar('groq_key', default='')
@@ -68,12 +69,23 @@ async def startup():
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
+        # SQLite migrations FIRST — add new columns safely
+        for stmt in [
+            "ALTER TABLE tenants ADD COLUMN groq_api_key TEXT DEFAULT ''",
+            "ALTER TABLE tenants ADD COLUMN pagespeed_api_key TEXT DEFAULT ''",
+            "ALTER TABLE tenants ADD COLUMN google_refresh_token TEXT DEFAULT ''",
+            "ALTER TABLE users ADD COLUMN google_refresh_token TEXT DEFAULT ''",
+        ]:
+            try:
+                db.execute(text(stmt)); db.commit()
+            except Exception:
+                db.rollback()
         # Create default admin
         if db.query(User).count() == 0:
             db.add(User(
                 email="corp.conectaai@cmail.com",
                 name="Admin ConectaAI",
-                password_hash=hash_password("ConectaAI#2025!"),
+                password_hash=hash_password("ConectaAI2026"),
                 role="admin",
             ))
             db.commit()
@@ -81,16 +93,6 @@ async def startup():
         for s in db.query(Setting).all():
             if s.value:
                 os.environ[s.key] = s.value
-        # SQLite migrations — add new columns safely
-        for stmt in [
-            "ALTER TABLE tenants ADD COLUMN groq_api_key TEXT DEFAULT ''",
-            "ALTER TABLE tenants ADD COLUMN pagespeed_api_key TEXT DEFAULT ''",
-            "ALTER TABLE tenants ADD COLUMN google_refresh_token TEXT DEFAULT ''",
-        ]:
-            try:
-                db.execute(text(stmt)); db.commit()
-            except Exception:
-                db.rollback()
     finally:
         db.close()
 
@@ -98,6 +100,7 @@ async def startup():
 app.include_router(auth_router)
 app.include_router(admin_router)
 app.include_router(google_router)
+app.include_router(rank_router)
 
 GROQ_MODEL = "llama-3.1-8b-instant"
 
