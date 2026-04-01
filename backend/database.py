@@ -92,6 +92,17 @@ class AlertConfig(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
+class ReportSchedule(Base):
+    __tablename__ = "report_schedules"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    site_url = Column(String, nullable=False)
+    report_email = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+    last_sent = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
 def get_db():
     db = SessionLocal()
     try:

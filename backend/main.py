@@ -8,7 +8,7 @@ import httpx, re, os, json, hashlib, time, contextvars
 
 from bs4 import BeautifulSoup
 from sqlalchemy import text
-from database import Base, engine, SessionLocal, Setting, User, Tenant, CrawlJob, AlertConfig
+from database import Base, engine, SessionLocal, Setting, User, Tenant, CrawlJob, AlertConfig, ReportSchedule
 from auth_helpers import hash_password, decode_token
 from auth_router import router as auth_router
 from admin_router import router as admin_router
@@ -17,6 +17,7 @@ from rank_router import router as rank_router
 from crawler_router import router as crawler_router
 from analytics_router import router as analytics_router
 from alerts_router import router as alerts_router
+from reports_router import router as reports_router
 
 # Per-request effective API keys (set by auth middleware based on tenant config)
 _ctx_groq_key: contextvars.ContextVar[str] = contextvars.ContextVar('groq_key', default='')
@@ -108,6 +109,7 @@ app.include_router(rank_router)
 app.include_router(crawler_router)
 app.include_router(analytics_router)
 app.include_router(alerts_router)
+app.include_router(reports_router)
 
 GROQ_MODEL = "llama-3.1-8b-instant"
 

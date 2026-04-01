@@ -14,6 +14,7 @@ import RankTrackingPage from './pages/RankTrackingPage'
 import CrawlerPage from './pages/CrawlerPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import AlertsPage from './pages/AlertsPage'
+import AutoReportsPage from './pages/AutoReportsPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import TenantsPage from './pages/admin/TenantsPage'
 import UsersPage from './pages/admin/UsersPage'
@@ -40,6 +41,7 @@ const SEO_TABS = [
   { id: 'crawler', label: 'Site Crawler', icon: '🕷️', desc: 'Crawlea el sitio y detecta issues SEO' },
   { id: 'analytics', label: 'Google Analytics 4', icon: '📊', desc: 'Sesiones, usuarios y tráfico GA4' },
   { id: 'my-settings', label: 'Mis API Keys', icon: '🔑', desc: 'Configura tus claves propias' },
+  { id: 'auto-reports', label: 'Informes Automáticos', icon: '📧', desc: 'Reporte mensual por email' },
   { id: 'alerts', label: 'Alertas SEO', icon: '🔔', desc: 'Notificaciones de caída de score' },
 ]
 
@@ -210,6 +212,7 @@ export default function App() {
               {tab === 'crawler' && <CrawlerPage />}
               {tab === 'analytics' && <AnalyticsPage />}
               {tab === 'my-settings' && <MySettingsPage />}
+              {tab === 'auto-reports' && <AutoReportsPage />}
               {tab === 'alerts' && <AlertsPage />}
             </>
           )}
