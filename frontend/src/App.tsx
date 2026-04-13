@@ -15,6 +15,7 @@ import CrawlerPage from './pages/CrawlerPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import AlertsPage from './pages/AlertsPage'
 import AutoReportsPage from './pages/AutoReportsPage'
+import HistoryPage from './pages/HistoryPage'
 import DashboardPage from './pages/admin/DashboardPage'
 import TenantsPage from './pages/admin/TenantsPage'
 import UsersPage from './pages/admin/UsersPage'
@@ -43,6 +44,7 @@ const SEO_TABS = [
   { id: 'my-settings', label: 'Mis API Keys', icon: '🔑', desc: 'Configura tus claves propias' },
   { id: 'auto-reports', label: 'Informes Automáticos', icon: '📧', desc: 'Reporte mensual por email' },
   { id: 'alerts', label: 'Alertas SEO', icon: '🔔', desc: 'Notificaciones de caída de score' },
+  { id: 'history', label: 'Historial', icon: '🕐', desc: 'Webs analizadas y comparativas históricas' },
 ]
 
 const ADMIN_TABS = [
@@ -214,6 +216,7 @@ export default function App() {
               {tab === 'my-settings' && <MySettingsPage />}
               {tab === 'auto-reports' && <AutoReportsPage />}
               {tab === 'alerts' && <AlertsPage />}
+              {tab === 'history' && <HistoryPage />}
             </>
           )}
           {/* Admin Panel */}
